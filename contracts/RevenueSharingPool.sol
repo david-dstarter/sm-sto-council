@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
 
 
 contract RevenueSharingPool is Proxy, Ownable, ReentrancyGuard {
@@ -70,6 +69,8 @@ contract RevenueSharingPool is Proxy, Ownable, ReentrancyGuard {
         for (uint256 i = 0; i < tokenList.length; i++) {
             ERC20 token = tokenList[i];
             Recipient storage recipient = recipients[projectIndexToDelete][address(token)];
+
+
             require(recipient.lastTimestamp == 0, "Tokens have been transferred to this project");
         }
         projectIdToIndex[projectId] = 0;

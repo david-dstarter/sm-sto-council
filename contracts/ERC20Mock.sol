@@ -6,17 +6,25 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Arrays.sol";
 
 contract ERC20Mock is Context, IERC20, IERC20Metadata, Ownable {
     using SafeMath for uint256;
+    using Arrays for uint256[];
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
+    mapping (address => uint256[]) private snapshotIds;
+    mapping (address => uint256[]) private snapshotBalances;
+
+    uint256 private currSnapshotId;
 
     uint256 private _totalSupply;
     string private _name;
     string private _symbol;
     uint8 private _decimals;
+
+    event Snapshot(uint256 id);
 
     constructor(
         string memory name_,
@@ -29,6 +37,41 @@ contract ERC20Mock is Context, IERC20, IERC20Metadata, Ownable {
         _decimals = decimals_;
         _mint(_msgSender(), initialSupply * 10**uint256(decimals_));
         _mint(address(this), initialSupply * 10**uint256(decimals_));
+    }
+
+    function snapshot() public returns (uint256) {
+        currSnapshotId += 1;
+        emit Snapshot(currSnapshotId);
+        return currSnapshotId;
+    }
+
+    function balanceOfAt(address _account, uint256 _snapshotId) public view returns (uint256) {
+        require(_snapshotId > 0 && _snapshotId <= currSnapshotId);
+
+        uint256 idx = snapshotIds[_account].findUpperBound(_snapshotId);
+
+        if (idx == snapshotIds[_account].length) {
+            return balanceOf(_account);
+        } else {
+            return snapshotBalances[_account][idx];
+        }
+    }
+
+    function _updateSnapshot(address _account) internal {
+        if (_lastSnapshotId(_account) < currSnapshotId) {
+            snapshotIds[_account].push(currSnapshotId);
+            snapshotBalances[_account].push(balanceOf(_account));
+        }
+    }
+
+    function _lastSnapshotId(address _account) internal returns (uint256) {
+        uint256[] storage snapshots = snapshotIds[_account];
+
+        if (snapshots.length == 0) {
+            return 0;
+        } else {
+            return snapshots[snapshots.length - 1];
+        }
     }
 
     function name() public view override returns (string memory) {
@@ -52,6 +95,8 @@ contract ERC20Mock is Context, IERC20, IERC20Metadata, Ownable {
     }
 
     function transfer(address recipient, uint256 amount) public override returns (bool) {
+        _updateSnapshot(msg.sender);
+        _updateSnapshot(recipient);
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -67,6 +112,8 @@ contract ERC20Mock is Context, IERC20, IERC20Metadata, Ownable {
 
     function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
         _transfer(sender, recipient, amount);
+        _updateSnapshot(sender);
+        _updateSnapshot(recipient);
         _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
     }
