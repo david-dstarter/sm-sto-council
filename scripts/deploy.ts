@@ -22,7 +22,7 @@ async function main() {
   const decimal = 10;
   const totalSupply = 1000000000
   // const revenuePool = await ethers.deployContract("RevenueSharingPool")
-  const erc20Mock = await ethers.deployContract("ERC20Mock", [name, symbol, decimal, totalSupply])
+  const erc20Mock = await ethers.deployContract("U2UToken", [name, symbol, totalSupply])
 
   // await revenuePool.waitForDeployment();
   await erc20Mock.waitForDeployment();

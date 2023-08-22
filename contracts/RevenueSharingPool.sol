@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
+import "./U2UToken.sol";
 
 
 contract RevenueSharingPool is Proxy, Ownable, ReentrancyGuard {
@@ -12,12 +14,19 @@ contract RevenueSharingPool is Proxy, Ownable, ReentrancyGuard {
 
     address public implAddress;
     mapping(address => bool) public whitelist;
-    ERC20[] public tokenList;
+    U2UToken[] public tokenList;
+
+    U2UToken private tokenU2U;
 
     struct Recipient {
         uint256 projectIdIndex;
         uint256 lastTimestamp;
     }
+
+    function setU2UToken(address _address) {
+        tokenU2U = U2UToken(_address);
+    }
+
     uint256 public projectMaxIndex;
     mapping(uint256 => mapping(address => Recipient)) public recipients;
     mapping(string => uint256) public projectIdToIndex;
