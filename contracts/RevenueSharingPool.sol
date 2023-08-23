@@ -14,31 +14,12 @@ contract RevenueSharingPool is Proxy, Ownable, ReentrancyGuard {
 
     address public implAddress;
     mapping(address => bool) public whitelist;
-    U2UToken[] public tokenList;
 
-    U2UToken private tokenU2U;
+    mapping(string => uint256) public lastBlockPerProject;
 
-    struct Recipient {
-        uint256 projectIdIndex;
-        uint256 lastTimestamp;
-    }
-
-    function setU2UToken(address _address) {
-        tokenU2U = U2UToken(_address);
-    }
-
-    uint256 public projectMaxIndex;
-    mapping(uint256 => mapping(address => Recipient)) public recipients;
-    mapping(string => uint256) public projectIdToIndex;
-
-    event ProjectAdded(string projectId);
-    event TokenAdded(address indexed tokenAddress);
-    event TokensReceived(address sender, address tokenAddress, uint256 amount, string projectId, uint256 fromBlock, uint256 toBlock);
-
-    modifier onlyValidProject(string memory projectId) {
-        require(projectIdToIndex[projectId] != 0, "Invalid project ID");
-        _;
-    }
+    event RevenueReceived(address sender, address tokenAddress, uint256 amount, string projectId, uint256 fromBlock, uint256 toBlock);
+    event TokenAdded(address tokenAddress);
+    event TokenRemoved(address tokenAddress);
 
     function _implementation()  internal view override returns (address){
         return  implAddress;
@@ -48,62 +29,25 @@ contract RevenueSharingPool is Proxy, Ownable, ReentrancyGuard {
         implAddress = _implAddress;
     }
 
-    function isTokenAdded(ERC20 tokenAddress) public view returns (bool) {
-        for (uint256 i = 0; i < tokenList.length; i++) {
-            if (address(tokenList[i]) == address(tokenAddress)) {
-                return true;
-            }
-        }
-        return false;
+    function setWhitelist(U2UToken token) external onlyOwner {
+        whitelist[address(token)] = true;
+        emit TokenAdded(address(token));
     }
 
-    function addToken(ERC20 tokenAddress) external onlyOwner {
-        require(address(tokenAddress) != address(0), "Invalid token address");
-        require(!isTokenAdded(tokenAddress), "Token already added");
-        tokenList.push(tokenAddress);
-        emit TokenAdded(address(tokenAddress));
+    function removeFromWhiteList(U2UToken token) external onlyOwner {
+        whitelist[address(token)] = false;
+        emit TokenRemoved(address(token));
     }
 
-    function addProject(string memory projectId) external onlyOwner {
-        require(projectIdToIndex[projectId] == 0, "Project with this ID already exists");
-        uint256 projectIdIndex = projectMaxIndex + 1;
-        projectIdToIndex[projectId] = projectIdIndex;
-        emit ProjectAdded(projectId);
-        projectMaxIndex = projectIdIndex;
-    }
 
-    function deleteProject(string memory projectId) external onlyOwner onlyValidProject(projectId) {
-        uint256 projectIndexToDelete = projectIdToIndex[projectId];
-        require(projectIndexToDelete != 0, "Project not found");
-        for (uint256 i = 0; i < tokenList.length; i++) {
-            ERC20 token = tokenList[i];
-            Recipient storage recipient = recipients[projectIndexToDelete][address(token)];
-
-
-            require(recipient.lastTimestamp == 0, "Tokens have been transferred to this project");
-        }
-        projectIdToIndex[projectId] = 0;
-    }
-
-    function transferToPool(string memory projectId, uint256 amount, ERC20 tokenAddress) public onlyValidProject(projectId) nonReentrant {
-        require(address(tokenAddress) != address(0), "Invalid token address");
-        require(isTokenAdded(tokenAddress), "Token is not added");
-        uint256 senderBalance = tokenAddress.balanceOf(msg.sender);
+    function transferToPool(string memory projectId, uint256 amount, U2UToken token) public  nonReentrant {
+        require(address(token) != address(0), "Invalid token address");
+        uint256 senderBalance = token.balanceOf(msg.sender);
         require(senderBalance >= amount, "Insufficient balance");
-
-        uint256 projectIdIndex = getIndexProject(projectId);
-        Recipient storage recipient = recipients[projectIdIndex][address(tokenAddress)];
-
-        uint256 lastUpdate = recipient.lastTimestamp;
-        recipient.projectIdIndex  = projectIdIndex;
-        recipient.lastTimestamp = block.number;
-        tokenAddress.safeTransferFrom(msg.sender, address(this), amount);
-        emit TokensReceived(msg.sender, address(tokenAddress), amount, projectId, lastUpdate + 1, block.number);
+        token.transferFrom(msg.sender, address(this), amount);
+        uint256 lastBlock = lastBlockPerProject[projectId] + 1;
+        uint256 currentBlock = block.number;
+        emit RevenueReceived(_msgSender(), address(token), amount, projectId, lastBlock, currentBlock);
+        lastBlockPerProject[projectId] = currentBlock;
     }
-
-    function getIndexProject(string memory projectId) public returns (uint256) {
-        uint256 projectIdIndex = projectIdToIndex[projectId];
-        return projectIdIndex;
-    }
-
 }
