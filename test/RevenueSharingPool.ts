@@ -12,32 +12,32 @@ describe("RevenueSharingPool", function () {
         [owner, user] = await ethers.getSigners();
         const Pool = await ethers.getContractFactory("RevenueSharingPool");
         pool = await Pool.connect(owner).deploy()
-        const ERC20Mock = await ethers.getContractFactory("ERC20Mock");
-        token = await ERC20Mock.connect(owner).deploy('Test', 'TTK', 18, 1000000000);
+        const ERC20Mock = await ethers.getContractFactory("U2UToken");
+        token = await ERC20Mock.connect(owner).deploy('U2U', 'U2U');
     });
 
-    it("should add project", async function () {
-        await pool.connect(owner).addProject("Project 1");
-        await pool.connect(owner).addProject("Project 2");
-        const project = await pool.projectIdToIndex("Project 1");
-        const project2 = await pool.projectIdToIndex("Project 2");
-        await pool.connect(owner).deleteProject("Project 1");
-        await pool.connect(owner).addProject("Project 3");
-        await pool.connect(owner).addProject("Project 4");
-        await pool.connect(owner).addProject("Project 5");
+    it("should transfer U2U to the pool", async function () {
+        const projectId = "Project_1";
 
-        const project3 = await pool.projectIdToIndex("Project 3");
-        const project4 = await pool.projectIdToIndex("Project 4");
-        const project5 = await pool.projectIdToIndex("Project 5");
-        console.log(project2, project3, project4, project5)
-        // expect(project.projectId).to.equal("Project 1");
+        const amount = ethers.toBigInt(10000);
+
+        const tx = await owner.sendTransaction({
+            to: pool.address,
+            value: amount,
+        });
+        await tx.wait();
+        const transferTx = await pool.transferToPool(projectId);
+        await transferTx.wait();
+        const expectedLastBlock = (await ethers.provider.getBlockNumber()) + 1;
+        const lastBlock = await pool.lastBlockPerProject(projectId);
+        expect(lastBlock).to.equal(expectedLastBlock);
+
+        // const recipient = await pool.recipients(projectId, token);
     });
 
     it("should transfer tokens to the pool", async function () {
         const projectId = "Project_1";
-        await pool.connect(owner).addToken(token);
-        await pool.connect(owner).addProject(projectId);
-        const project = await pool.projectIdToIndex(projectId);
+
         const mintBalance = ethers.toBigInt(10000);
         const initialBalance = ethers.toBigInt(100);
         await token.mint(user.address, mintBalance);
@@ -45,7 +45,7 @@ describe("RevenueSharingPool", function () {
 
         const amount = ethers.toBigInt(20);
 
-        const result = await pool.connect(user).transferToPool('Project_1', amount.toString(), token);
+        const result = await pool.connect(user).transferTokenToPool('Project_1', token, amount.toString());
         const tx = await result.wait();
         expect(await token.balanceOf(pool)).to.equal(amount);
         // const recipient = await pool.recipients(projectId, token);
