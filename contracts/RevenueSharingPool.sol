@@ -14,7 +14,6 @@ contract RevenueSharingPool is Proxy, Ownable, ReentrancyGuard {
 
     address public implAddress;
     mapping(address => bool) public whitelist;
-
     mapping(string => uint256) public lastBlockPerProject;
 
     event RevenueReceived(address sender, address tokenAddress, uint256 amount, string projectId, uint256 fromBlock, uint256 toBlock);
