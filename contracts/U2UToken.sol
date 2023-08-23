@@ -32,14 +32,12 @@ contract U2UToken is  ERC20Snapshot,Ownable {
         return true;
     }
 
-    function mint(address account, uint256 amount) internal  returns (bool)  {
+    function mint(address account, uint256 amount) external onlyOwner{
         _mint(account, amount);
-        return true;
     }
 
-    function burn(address account, uint256 amount) internal  returns (bool) {
+    function burn(address account, uint256 amount) external onlyOwner {
         _burn(account, amount);
-        return true;
     }
 
     function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {

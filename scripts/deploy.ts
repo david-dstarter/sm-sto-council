@@ -20,13 +20,13 @@ async function main() {
   const name = 'U2V1';
   const symbol = 'U2V1';
   const totalSupply = 1000000000
-  const revenuePool = await ethers.deployContract("RevenueSharingPool")
-  // const erc20Mock = await ethers.deployContract("U2UToken", [name, symbol, totalSupply])
+  // const revenuePool = await ethers.deployContract("RevenueSharingPool")
+  const erc20Mock = await ethers.deployContract("U2UToken", [name, symbol, totalSupply])
 
-  await revenuePool.waitForDeployment();
+  // await revenuePool.waitForDeployment();
   // await erc20Mock.waitForDeployment();
-  console.log(revenuePool)
-  // console.log(erc20Mock)
+  // console.log(revenuePool)
+  console.log(erc20Mock)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
