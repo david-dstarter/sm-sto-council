@@ -40,16 +40,21 @@ contract RevenueSharingPool is Proxy, Ownable, ReentrancyGuard {
     }
 
 
-    function transferToPool(string memory projectId, U2UToken token) external payable nonReentrant {
-        if (address(token) != address(0)) {
-            uint256 senderBalance = token.balanceOf(msg.sender);
-            require(senderBalance >= msg.value, "Insufficient balance");
-            token.transferFrom(msg.sender, address(this), msg.value);
-        }
-
+    function transferTokenToPool(string memory projectId, U2UToken token, uint256 amount) external nonReentrant {
+        uint256 senderBalance = token.balanceOf(msg.sender);
+        require(senderBalance >= amount, "Insufficient balance");
+        token.transferFrom(msg.sender, address(this), amount);
         uint256 lastBlock = lastBlockPerProject[projectId] + 1;
         uint256 currentBlock = block.number;
-        emit RevenueReceived(_msgSender(), address(token), msg.value, projectId, lastBlock, currentBlock);
+        emit RevenueReceived(_msgSender(), address(token), amount, projectId, lastBlock, currentBlock);
+        lastBlockPerProject[projectId] = currentBlock;
+    }
+
+    function transferToPool(string memory projectId) external payable nonReentrant {
+        require(address(0) != address(this), "Contract address must not be zero address");
+        uint256 lastBlock = lastBlockPerProject[projectId] + 1;
+        uint256 currentBlock = block.number;
+        emit RevenueReceived(_msgSender(), address(0), msg.value, projectId, lastBlock, currentBlock);
         lastBlockPerProject[projectId] = currentBlock;
     }
 }

@@ -10,8 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
 contract U2UToken is  ERC20Snapshot,Ownable {
     constructor(
         string memory name,
-        string memory symbol,
-        uint256 initialSupply
+        string memory symbol
     ) ERC20(name, symbol) {
         snapshot();
     }
