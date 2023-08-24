@@ -25,8 +25,18 @@ async function main() {
 
   await revenuePool.waitForDeployment();
   // await erc20Mock.waitForDeployment();
-  console.log(revenuePool)
+  console.log('Revenue pool addrress', revenuePool.target)
   // console.log(erc20Mock)
+}
+
+async function deployTokens() {
+  for (let i = 1; i<=10; i++) {
+    const name = `U2V${i}`;
+    const symbol = `U2V${i}`;
+    const erc20Mock = await ethers.deployContract("U2UToken", [name, symbol])
+    await erc20Mock.waitForDeployment();
+    console.log(name,erc20Mock.target)
+  }
 }
 
 // We recommend this pattern to be able to use async/await everywhere
@@ -35,3 +45,8 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+// deployTokens().catch((error) => {
+//   console.error(error);
+//   process.exitCode = 1;
+// });
