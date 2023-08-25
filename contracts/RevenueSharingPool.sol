@@ -12,16 +12,16 @@ contract RevenueSharingPool is Proxy, Ownable, ReentrancyGuard {
     using SafeERC20 for U2UToken;
 
     address public implAddress;
-    mapping(address => bool) public acceptTokenList;
-    mapping(uint256 => uint256) public lastBlockPerProject;
-    mapping(uint256 => uint256) public revenuePeriod;
+    mapping(address => bool) private acceptTokenList;
+    mapping(uint256 => uint256) private lastBlockPerProject;
+    mapping(uint256 => uint256) private revenuePeriod;
     address[] public tokenList;
 
     struct SnapShotBalance {
         uint256 snapshotId;
         uint256 totalBalance;
     }
-    mapping (uint256 => mapping(address => SnapShotBalance)) public balanceWithProject;
+    mapping (uint256 => mapping(address => SnapShotBalance)) private balanceWithProject;
 
     event RevenueReceived(address sender, address tokenAddress, uint256 amount, string projectId, string id, uint256 fromTime, uint256 toTime);
     event TokenBalanceSnapshot(address token, uint256 snapshotId, uint256 totalSupply, string id);
