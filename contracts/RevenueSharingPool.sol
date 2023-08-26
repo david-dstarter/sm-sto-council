@@ -43,6 +43,10 @@ contract RevenueSharingPool is Proxy, Ownable, ReentrancyGuard {
         emit TokenAdded(address(token));
     }
 
+    function getRevenueSharingPerId(string memory id) public view returns (uint256) {
+        return revenuePeriod[uint256(keccak256(abi.encode(keccak256(bytes(id)))))];
+    }
+
     function revenueClaimable(string memory id, address sender) external view returns (uint256) {
         uint256 revenueId = uint256(keccak256(abi.encode(keccak256(bytes(id)))));
         uint256 revenue = revenuePeriod[revenueId];
